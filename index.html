@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wordle Duel</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page">
+
+    <header class="header">
+      <div class="logo">
+        <div class="tile tile-green">D</div>
+        <div class="tile tile-yellow">U</div>
+        <div class="tile tile-green">E</div>
+        <div class="tile tile-yellow">L</div>
+      </div>
+      <div class="subtitle">Wordle head-to-head</div>
+    </header>
+
+    <div id="conn-status" class="conn-status">Connecting…</div>
+
+    <section class="scoreboard">
+      <div class="score-tile tile-green" id="tile-p1">
+        <div class="score-tile-label" id="label-p1">Player 1</div>
+        <div class="score-tile-value" id="value-p1">0</div>
+      </div>
+      <div class="ties-box">
+        <div class="ties-label">Ties</div>
+        <div class="ties-value" id="value-ties">0</div>
+        <div class="ties-games" id="value-games">0 games</div>
+      </div>
+      <div class="score-tile tile-yellow" id="tile-p2">
+        <div class="score-tile-label" id="label-p2">Player 2</div>
+        <div class="score-tile-value" id="value-p2">0</div>
+      </div>
+    </section>
+
+    <div id="streak-note" class="streak-note"></div>
+
+    <div class="names-edit">
+      <button id="edit-names-btn" class="link-btn">Edit player names</button>
+      <div id="names-form" class="names-form hidden">
+        <input id="name-p1-input" placeholder="Player 1 name" maxlength="20" />
+        <input id="name-p2-input" placeholder="Player 2 name" maxlength="20" />
+        <button id="save-names-btn" class="btn btn-green">Save</button>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-title">Add today's result</div>
+      <div class="form-row">
+        <div>
+          <label class="field-label">Date</label>
+          <input type="date" id="input-date" />
+        </div>
+        <div>
+          <label class="field-label">Word (optional)</label>
+          <input type="text" id="input-word" maxlength="5" placeholder="CRANE" style="text-transform:uppercase" />
+        </div>
+      </div>
+      <div class="form-row guess-row">
+        <div>
+          <label class="field-label" id="guess-label-p1">Player 1's guesses</label>
+          <div class="guess-picker" id="picker-p1"></div>
+        </div>
+        <div>
+          <label class="field-label" id="guess-label-p2">Player 2's guesses</label>
+          <div class="guess-picker" id="picker-p2"></div>
+        </div>
+      </div>
+      <button id="add-entry-btn" class="btn btn-green btn-block">+ Add result</button>
+      <div id="save-error" class="save-error hidden">Couldn't save — check your connection and try again.</div>
+    </section>
+
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="progress">Progress</button>
+      <button class="tab-btn" data-tab="history">History</button>
+      <button class="tab-btn" data-tab="leaderboard">Leaderboard</button>
+    </nav>
+
+    <div id="empty-state" class="empty-state hidden">
+      No games yet. Add your first result above to start the scoreboard.
+    </div>
+
+    <section id="tab-progress" class="tab-panel card">
+      <div class="section-title">Cumulative score over time</div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="chart-progress" role="img" aria-label="Line chart of cumulative score over time"></canvas>
+      </div>
+      <div class="section-title" style="margin-top:20px;">Guess distribution</div>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="chart-distribution" role="img" aria-label="Bar chart of guess distribution per player"></canvas>
+      </div>
+    </section>
+
+    <section id="tab-history" class="tab-panel card hidden">
+      <div id="history-list"></div>
+    </section>
+
+    <section id="tab-leaderboard" class="tab-panel hidden">
+      <div class="card">
+        <div class="section-title">Overall record</div>
+        <div class="stat-grid" id="stat-grid"></div>
+      </div>
+      <div class="card" style="margin-top:10px;">
+        <div class="section-title">Current lead</div>
+        <div id="lead-note" class="lead-note"></div>
+      </div>
+    </section>
+
+  </div>
+
+  <script type="module" src="firebase-config.js"></script>
+  <script type="module" src="app.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+</body>
+</html>
