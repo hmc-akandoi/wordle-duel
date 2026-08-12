@@ -88,8 +88,6 @@ function renderNames() {
   $("guess-label-p2").textContent = `${players.p2}'s guesses`;
   $("margin-note-p1").textContent = players.p1;
   $("margin-note-p2").textContent = players.p2;
-  $("legend-p1").textContent = players.p1;
-  $("legend-p2").textContent = players.p2;
 }
 
 // ---------- Core stats ----------
@@ -159,8 +157,6 @@ function computeExtendedStats() {
   const letterCounts = {};
   const weekdayTotals = { p1: Array(7).fill(0), p2: Array(7).fill(0) };
   const weekdayCounts = { p1: Array(7).fill(0), p2: Array(7).fill(0) };
-  const rollingLabels = [], rollingP1 = [], rollingP2 = [];
-  const p1Window = [], p2Window = [];
 
   entries.forEach((e) => {
     [["p1", e.g1], ["p2", e.g2]].forEach(([who, g]) => {
@@ -195,14 +191,6 @@ function computeExtendedStats() {
     const wd = new Date(e.date + "T00:00:00").getDay();
     if (e.g1 !== "X") { weekdayTotals.p1[wd] += e.g1; weekdayCounts.p1[wd] += 1; }
     if (e.g2 !== "X") { weekdayTotals.p2[wd] += e.g2; weekdayCounts.p2[wd] += 1; }
-
-    p1Window.push(e.g1 === "X" ? 7 : e.g1);
-    p2Window.push(e.g2 === "X" ? 7 : e.g2);
-    if (p1Window.length > 7) p1Window.shift();
-    if (p2Window.length > 7) p2Window.shift();
-    rollingLabels.push(fmtDate(e.date));
-    rollingP1.push(+(p1Window.reduce((a, b) => a + b, 0) / p1Window.length).toFixed(2));
-    rollingP2.push(+(p2Window.reduce((a, b) => a + b, 0) / p2Window.length).toFixed(2));
   });
 
   const last10 = entries.slice(-10);
@@ -225,7 +213,6 @@ function computeExtendedStats() {
       p1: weekdayTotals.p1.map((t, i) => weekdayCounts.p1[i] ? +(t / weekdayCounts.p1[i]).toFixed(2) : null),
       p2: weekdayTotals.p2.map((t, i) => weekdayCounts.p2[i] ? +(t / weekdayCounts.p2[i]).toFixed(2) : null)
     },
-    rollingLabels, rollingP1, rollingP2,
     last10, record
   };
 }
@@ -402,8 +389,6 @@ function renderAll() {
   }
 
   renderCoreCharts(stats);
-  renderCalendarHeatmap();
-  renderRollingChart(ext);
   renderWeekdayChart(ext);
   renderLettersChart(ext);
   renderHistory();
@@ -479,20 +464,6 @@ function renderCoreCharts(stats) {
   });
 }
 
-function renderRollingChart(ext) {
-  if (typeof Chart === "undefined") return;
-  destroyChart("rolling");
-  charts.rolling = new Chart($("chart-rolling"), {
-    type: "line",
-    data: { labels: ext.rollingLabels, datasets: [makeLineDataset(players.p1, ext.rollingP1, COLORS.p1), makeLineDataset(players.p2, ext.rollingP2, COLORS.p2)] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      scales: { x: axisOpts.x, y: axisOpts.y },
-      plugins: { legend: { labels: { color: "#87888c", font: { size: 12 } } } }
-    }
-  });
-}
-
 function renderWeekdayChart(ext) {
   if (typeof Chart === "undefined") return;
   destroyChart("weekday");
@@ -529,35 +500,6 @@ function renderLettersChart(ext) {
       plugins: { legend: { display: false } }
     }
   });
-}
-
-// ---------- Calendar heatmap ----------
-function renderCalendarHeatmap() {
-  const container = $("calendar-heatmap");
-  container.innerHTML = "";
-  if (entries.length === 0) return;
-
-  const byDate = {};
-  entries.forEach((e) => { byDate[e.date] = e.result; });
-
-  const firstDate = entries[0].date;
-  const lastDate = todayStr();
-  const start = new Date(firstDate + "T00:00:00");
-  start.setDate(start.getDate() - start.getDay());
-
-  let cursor = new Date(start);
-  const end = new Date(lastDate + "T00:00:00");
-
-  while (cursor <= end) {
-    const iso = cursor.toISOString().slice(0, 10);
-    const cell = document.createElement("div");
-    const result = byDate[iso];
-    cell.className = "cal-cell" + (result === "p1" ? " cal-p1" : result === "p2" ? " cal-p2" : result === "tie" ? " cal-tie" : "");
-    cell.title = result ? `${fmtDateLong(iso)}: ${result === "tie" ? "Tie" : players[result] + " won"}` : iso;
-    container.appendChild(cell);
-    cursor.setDate(cursor.getDate() + 1);
-  }
-  container.scrollLeft = container.scrollWidth;
 }
 
 // ---------- History ----------
