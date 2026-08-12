@@ -7,6 +7,8 @@
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div id="toast-container" class="toast-container"></div>
+
   <div class="page">
 
     <header class="header">
@@ -76,8 +78,10 @@
 
     <nav class="tabs">
       <button class="tab-btn active" data-tab="progress">Progress</button>
+      <button class="tab-btn" data-tab="insights">Insights</button>
       <button class="tab-btn" data-tab="history">History</button>
       <button class="tab-btn" data-tab="leaderboard">Leaderboard</button>
+      <button class="tab-btn" data-tab="milestones">Milestones</button>
     </nav>
 
     <div id="empty-state" class="empty-state hidden">
@@ -89,9 +93,43 @@
       <div class="chart-wrap" style="height:240px;">
         <canvas id="chart-progress" role="img" aria-label="Line chart of cumulative score over time"></canvas>
       </div>
-      <div class="section-title" style="margin-top:20px;">Guess distribution</div>
+      <div class="section-title" style="margin-top:20px;">Score margin over time</div>
+      <p class="section-note">Positive means <span id="margin-note-p1"></span> is ahead, negative means <span id="margin-note-p2"></span> is ahead.</p>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="chart-margin" role="img" aria-label="Chart of the point gap between players over time"></canvas>
+      </div>
+    </section>
+
+    <section id="tab-insights" class="tab-panel card hidden">
+      <div class="section-title">Results calendar</div>
+      <p class="section-note">Each square is a day — colored by who won.</p>
+      <div id="calendar-heatmap" class="calendar-heatmap"></div>
+      <div class="calendar-legend">
+        <span><i class="legend-dot tile-green"></i> <span id="legend-p1"></span></span>
+        <span><i class="legend-dot tile-yellow"></i> <span id="legend-p2"></span></span>
+        <span><i class="legend-dot tile-gray"></i> Tie</span>
+      </div>
+
+      <div class="section-title" style="margin-top:24px;">7-game rolling average guesses</div>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="chart-rolling" role="img" aria-label="Line chart of rolling average guess count"></canvas>
+      </div>
+
+      <div class="section-title" style="margin-top:24px;">Average guesses by day of week</div>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="chart-weekday" role="img" aria-label="Bar chart of average guesses by day of week"></canvas>
+      </div>
+
+      <div class="section-title" style="margin-top:24px;">Guess distribution</div>
       <div class="chart-wrap" style="height:220px;">
         <canvas id="chart-distribution" role="img" aria-label="Bar chart of guess distribution per player"></canvas>
+      </div>
+
+      <div id="letters-section">
+        <div class="section-title" style="margin-top:24px;">Opening letter frequency</div>
+        <div class="chart-wrap" style="height:200px;">
+          <canvas id="chart-letters" role="img" aria-label="Bar chart of most common starting letters"></canvas>
+        </div>
       </div>
     </section>
 
@@ -107,6 +145,31 @@
       <div class="card" style="margin-top:10px;">
         <div class="section-title">Current lead</div>
         <div id="lead-note" class="lead-note"></div>
+      </div>
+      <div class="card" style="margin-top:10px;">
+        <div class="section-title">Head-to-head record</div>
+        <div id="record-note" class="lead-note"></div>
+      </div>
+      <div class="card" style="margin-top:10px;">
+        <div class="section-title">Notable games</div>
+        <div id="notable-games"></div>
+      </div>
+      <div class="card" style="margin-top:10px;">
+        <div class="section-title">Current form (last 10)</div>
+        <div id="form-note"></div>
+      </div>
+      <div class="card" style="margin-top:10px;">
+        <div class="section-title">Performance under pressure</div>
+        <p class="section-note">Win rate when the other player already solved in 3 guesses or fewer.</p>
+        <div class="stat-grid" id="clutch-grid"></div>
+      </div>
+    </section>
+
+    <section id="tab-milestones" class="tab-panel hidden">
+      <div class="card" id="anniversary-card"></div>
+      <div class="card" style="margin-top:10px;">
+        <div class="section-title">Achievements</div>
+        <div id="milestones-feed"></div>
       </div>
     </section>
 
