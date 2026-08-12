@@ -62,9 +62,24 @@ function parseCsv(text) {
   }
 })();
 
+async function wipeAllEntries() {
+  const snap = await getDocs(collection(db, "entries"));
+  const docs = snap.docs;
+  log(`Deleting ${docs.length} existing entries…`);
+  const BATCH_LIMIT = 400;
+  for (let i = 0; i < docs.length; i += BATCH_LIMIT) {
+    const batch = writeBatch(db);
+    docs.slice(i, i + BATCH_LIMIT).forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+    log(`Deleted ${Math.min(i + BATCH_LIMIT, docs.length)}/${docs.length}.`);
+  }
+  log("All existing entries wiped.");
+}
+
 document.getElementById("import-btn").onclick = async () => {
   const fileInput = document.getElementById("csv-file");
   const file = fileInput.files[0];
+  const wipeFirst = document.getElementById("wipe-first").checked;
   document.getElementById("log").textContent = "";
   if (!file) { log("Choose a CSV file first."); return; }
 
@@ -77,17 +92,30 @@ document.getElementById("import-btn").onclick = async () => {
     return;
   }
 
-  log(`Found ${rows.length} rows. Checking for existing entries…`);
+  log(`Found ${rows.length} rows.`);
 
-  const existingSnap = await getDocs(collection(db, "entries"));
-  const existingDates = new Set(existingSnap.docs.map((d) => d.data().date));
+  if (wipeFirst) {
+    const ok = confirm(
+      `This will PERMANENTLY DELETE all existing entries in the database, then import only the ${rows.length} rows from this CSV. This cannot be undone. Continue?`
+    );
+    if (!ok) { log("Cancelled — nothing was changed."); return; }
+    await wipeAllEntries();
+  } else {
+    log("Checking for existing entries…");
+  }
+
+  const existingDates = new Set();
+  if (!wipeFirst) {
+    const existingSnap = await getDocs(collection(db, "entries"));
+    existingSnap.docs.forEach((d) => existingDates.add(d.data().date));
+  }
 
   const toAdd = rows.filter((r) => {
-    if (!r.date || isNaN(r.g1) && r.g1 !== "X" || isNaN(r.g2) && r.g2 !== "X") {
+    if (!r.date || (isNaN(r.g1) && r.g1 !== "X") || (isNaN(r.g2) && r.g2 !== "X")) {
       log(`Skipping malformed row: ${JSON.stringify(r)}`);
       return false;
     }
-    if (existingDates.has(r.date)) {
+    if (!wipeFirst && existingDates.has(r.date)) {
       log(`Skipping ${r.date} — already in the database.`);
       return false;
     }
@@ -99,7 +127,7 @@ document.getElementById("import-btn").onclick = async () => {
     return;
   }
 
-  log(`Writing ${toAdd.length} new entries…`);
+  log(`Writing ${toAdd.length} entries…`);
 
   const BATCH_LIMIT = 400;
   for (let i = 0; i < toAdd.length; i += BATCH_LIMIT) {
