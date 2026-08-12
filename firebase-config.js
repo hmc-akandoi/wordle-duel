@@ -7,5 +7,7 @@ export const firebaseConfig = {
   projectId: "wordle-duel-21b9f",
   storageBucket: "wordle-duel-21b9f.firebasestorage.app",
   messagingSenderId: "140103748777",
-  appId: "1:140103748777:web:2050517d41761d18276db8"
+  appId: "1:140103748777:web:2050517d41761d18276db8",
 };
+
+export const recaptchaSiteKey = "6LeUCIItAAAAAMTci6Onp_U0fFYk-U8PFQ5Ahj2G";

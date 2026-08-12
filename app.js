@@ -1,11 +1,21 @@
-import { firebaseConfig } from "./firebase-config.js";
+import { firebaseConfig, recaptchaSiteKey } from "./firebase-config.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
 import {
   getFirestore, doc, setDoc, onSnapshot,
   collection, addDoc, deleteDoc, query, orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const app = initializeApp(firebaseConfig);
+
+// App Check: proves requests are coming from this real site running in a real
+// browser, not a script hitting Firestore directly with copied config keys.
+// Runs invisibly in the background — no puzzles, no UI.
+initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider(recaptchaSiteKey),
+  isTokenAutoRefreshEnabled: true
+});
+
 const db = getFirestore(app);
 
 const GUESS_OPTIONS = [1, 2, 3, 4, 5, 6, "X"];

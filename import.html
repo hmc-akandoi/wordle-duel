@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Import historical scores — Wordle Duel</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page" style="max-width:560px;">
+    <header class="header">
+      <div class="logo">
+        <div class="tile tile-green">I</div>
+        <div class="tile tile-yellow">M</div>
+        <div class="tile tile-green">P</div>
+        <div class="tile tile-yellow">T</div>
+      </div>
+      <div class="subtitle">One-time bulk import</div>
+    </header>
+
+    <div class="card">
+      <div class="card-title">Import from CSV</div>
+      <p style="font-size:13px;color:var(--text-dim);line-height:1.6;">
+        Columns needed: <code>date,word,player1_guesses,player2_guesses</code>.
+        Date as YYYY-MM-DD. Guesses are 1–6, or X for a fail.
+        <strong id="p1-note"></strong>
+      </p>
+      <input type="file" id="csv-file" accept=".csv" style="margin:10px 0;" />
+      <button id="import-btn" class="btn btn-green btn-block">Import</button>
+      <div id="log" style="margin-top:14px;font-size:12px;font-family:var(--mono);white-space:pre-wrap;color:var(--text-dim);max-height:260px;overflow-y:auto;"></div>
+    </div>
+
+    <p style="font-size:12px;color:var(--text-dim);text-align:center;">
+      Safe to re-run — rows with a date already in the database are skipped.
+    </p>
+  </div>
+
+  <script type="module" src="firebase-config.js"></script>
+  <script type="module" src="import.js"></script>
+</body>
+</html>
