@@ -124,12 +124,13 @@ function computeStats() {
   });
 
   let streakPlayer = null, streakCount = 0;
-  let longestStreak = { player: null, count: 0 };
+  let longestP1 = 0, longestP2 = 0;
   let runP = null, runC = 0;
   entries.forEach((e) => {
     if (e.result === "tie") { runP = null; runC = 0; return; }
     if (runP === e.result) runC += 1; else { runP = e.result; runC = 1; }
-    if (runC > longestStreak.count) longestStreak = { player: runP, count: runC };
+    if (runP === "p1" && runC > longestP1) longestP1 = runC;
+    if (runP === "p2" && runC > longestP2) longestP2 = runC;
   });
   for (let i = entries.length - 1; i >= 0; i--) {
     const r = entries[i].result;
@@ -145,7 +146,7 @@ function computeStats() {
     p2Avg: p2SolvedCount ? (p2SolvedTotal / p2SolvedCount).toFixed(2) : "-",
     p1Fails, p2Fails, p1SolvedCount, p2SolvedCount,
     dist, chartLabels, chartP1, chartP2, marginData,
-    streakPlayer, streakCount, longestStreak
+    streakPlayer, streakCount, longestP1, longestP2
   };
 }
 
@@ -408,16 +409,21 @@ function renderAll() {
   renderHistory();
   renderLeaderboard(stats, ext, leader);
   renderMilestonesTab(milestones);
+  renderWrapped();
 
   checkNewMilestones(milestones);
 }
 
 // ---------- Core charts ----------
 function makeLineDataset(label, data, color) {
-  return { label, data, borderColor: color, backgroundColor: color, tension: 0.3, pointRadius: 3, borderWidth: 2.5 };
+  const dense = data.length > 40;
+  return {
+    label, data, borderColor: color, backgroundColor: color, tension: 0.25,
+    pointRadius: dense ? 0 : 3, pointHoverRadius: 5, borderWidth: dense ? 2 : 2.5
+  };
 }
 const axisOpts = {
-  x: { ticks: { color: "#87888c", font: { size: 11 } }, grid: { color: "#3a3a3c" } },
+  x: { ticks: { color: "#87888c", font: { size: 11 }, autoSkip: true, maxTicksLimit: 8, maxRotation: 0 }, grid: { color: "#3a3a3c" } },
   y: { ticks: { color: "#87888c", font: { size: 11 } }, grid: { color: "#3a3a3c" } }
 };
 function destroyChart(key) { if (charts[key]) { charts[key].destroy(); delete charts[key]; } }
@@ -431,6 +437,7 @@ function renderCoreCharts(stats) {
     data: { labels: stats.chartLabels, datasets: [makeLineDataset(players.p1, stats.chartP1, COLORS.p1), makeLineDataset(players.p2, stats.chartP2, COLORS.p2)] },
     options: {
       responsive: true, maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
       scales: { x: axisOpts.x, y: { ...axisOpts.y, beginAtZero: true, ticks: { ...axisOpts.y.ticks, precision: 0 } } },
       plugins: { legend: { labels: { color: "#87888c", font: { size: 12 } } } }
     }
@@ -600,8 +607,8 @@ function renderLeaderboard(stats, ext, leader) {
     [`${players.p2} avg guesses`, stats.p2Avg, COLORS.p2],
     [`${players.p1} fails / solve rate`, `${stats.p1Fails} / ${stats.games ? Math.round(100 * stats.p1SolvedCount / stats.games) : 0}%`, COLORS.p1],
     [`${players.p2} fails / solve rate`, `${stats.p2Fails} / ${stats.games ? Math.round(100 * stats.p2SolvedCount / stats.games) : 0}%`, COLORS.p2],
-    [`${players.p1} longest streak`, stats.longestStreak.player === "p1" ? stats.longestStreak.count : "-", COLORS.p1],
-    [`${players.p2} longest streak`, stats.longestStreak.player === "p2" ? stats.longestStreak.count : "-", COLORS.p2],
+    [`${players.p1} longest streak`, stats.longestP1, COLORS.p1],
+    [`${players.p2} longest streak`, stats.longestP2, COLORS.p2],
     [`${players.p1} avg when winning / losing`, `${ext.p1WinAvg} / ${ext.p1LossAvg}`, COLORS.p1],
     [`${players.p2} avg when winning / losing`, `${ext.p2WinAvg} / ${ext.p2LossAvg}`, COLORS.p2]
   ];
@@ -708,7 +715,118 @@ function renderMilestonesTab(milestones) {
   });
 }
 
-// ---------- Form interactions ----------
+// ---------- Wrapped ----------
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+function wrappedPeriods() {
+  const periods = [{ key: "lifetime", label: "Lifetime" }];
+  const seen = new Set();
+  [...entries].reverse().forEach((e) => {
+    const [y, m] = e.date.split("-");
+    const key = `${y}-${m}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      periods.push({ key, label: `${MONTH_NAMES[parseInt(m, 10) - 1]} ${y}` });
+    }
+  });
+  const years = new Set(entries.map((e) => e.date.split("-")[0]));
+  years.forEach((y) => periods.push({ key: `year-${y}`, label: `${y} (full year)` }));
+  return periods;
+}
+
+function entriesForPeriod(key) {
+  if (key === "lifetime") return entries;
+  if (key.startsWith("year-")) {
+    const y = key.split("-")[1];
+    return entries.filter((e) => e.date.startsWith(y + "-"));
+  }
+  return entries.filter((e) => e.date.startsWith(key));
+}
+
+let wrappedInitialized = false;
+function initWrappedPicker() {
+  const select = $("wrapped-period");
+  const periods = wrappedPeriods();
+  const prevValue = select.value;
+  select.innerHTML = "";
+  periods.forEach((p) => {
+    const opt = document.createElement("option");
+    opt.value = p.key; opt.textContent = p.label;
+    select.appendChild(opt);
+  });
+  if (periods.some((p) => p.key === prevValue)) select.value = prevValue;
+  if (!wrappedInitialized) {
+    select.onchange = renderWrapped;
+    wrappedInitialized = true;
+  }
+}
+
+function renderWrapped() {
+  initWrappedPicker();
+  const card = $("wrapped-card");
+  const key = $("wrapped-period").value || "lifetime";
+  const subset = entriesForPeriod(key);
+
+  if (subset.length === 0) {
+    card.innerHTML = `<div class="wrapped-empty">No games in this period yet.</div>`;
+    return;
+  }
+
+  let p1Score = 0, p2Score = 0, ties = 0;
+  let p1Total = 0, p1Count = 0, p2Total = 0, p2Count = 0;
+  let p1Fails = 0, p2Fails = 0;
+  let bestGame = null;
+  let streakPlayer = null, streakCount = 0, longestP1 = 0, longestP2 = 0;
+
+  subset.forEach((e) => {
+    if (e.result === "p1") p1Score++; else if (e.result === "p2") p2Score++; else ties++;
+    if (e.g1 !== "X") { p1Total += e.g1; p1Count++; } else p1Fails++;
+    if (e.g2 !== "X") { p2Total += e.g2; p2Count++; } else p2Fails++;
+
+    [["p1", e.g1], ["p2", e.g2]].forEach(([who, g]) => {
+      if (g !== "X" && (!bestGame || g < bestGame.guesses)) bestGame = { player: who, guesses: g, date: e.date, word: e.word };
+    });
+
+    if (e.result === "tie") { streakPlayer = null; streakCount = 0; }
+    else {
+      if (streakPlayer === e.result) streakCount++; else { streakPlayer = e.result; streakCount = 1; }
+      if (streakPlayer === "p1" && streakCount > longestP1) longestP1 = streakCount;
+      if (streakPlayer === "p2" && streakCount > longestP2) longestP2 = streakCount;
+    }
+  });
+
+  const leader = p1Score > p2Score ? "p1" : p2Score > p1Score ? "p2" : null;
+  const periodLabel = wrappedPeriods().find((p) => p.key === key)?.label || "Lifetime";
+
+  let highlight;
+  if (bestGame) {
+    highlight = { emoji: "🏅", text: `Best game: ${players[bestGame.player]} solved in ${bestGame.guesses}${bestGame.word ? ` (${bestGame.word})` : ""} on ${fmtDate(bestGame.date)}` };
+  }
+  if (longestP1 >= 3 || longestP2 >= 3) {
+    const who = longestP1 >= longestP2 ? "p1" : "p2";
+    const count = Math.max(longestP1, longestP2);
+    highlight = { emoji: "🔥", text: `${players[who]}'s longest streak this period: ${count} wins in a row` };
+  }
+
+  card.innerHTML = `
+    <div class="wrapped-title">Wordle Duel Wrapped</div>
+    <div class="wrapped-heading">${periodLabel}</div>
+    <div class="wrapped-sub">${subset.length} game${subset.length === 1 ? "" : "s"} played
+      ${leader ? ` · <span style="color:${COLORS[leader]};font-weight:700;">${players[leader]}</span> came out on top` : " · dead even"}
+    </div>
+    <div class="wrapped-grid">
+      <div class="wrapped-stat"><div class="wrapped-stat-label">${players.p1} points</div><div class="wrapped-stat-value" style="color:${COLORS.p1}">${p1Score}</div></div>
+      <div class="wrapped-stat"><div class="wrapped-stat-label">${players.p2} points</div><div class="wrapped-stat-value" style="color:${COLORS.p2}">${p2Score}</div></div>
+      <div class="wrapped-stat"><div class="wrapped-stat-label">${players.p1} avg guesses</div><div class="wrapped-stat-value">${p1Count ? (p1Total / p1Count).toFixed(2) : "-"}</div><div class="wrapped-stat-sub">${p1Fails} fail${p1Fails === 1 ? "" : "s"}</div></div>
+      <div class="wrapped-stat"><div class="wrapped-stat-label">${players.p2} avg guesses</div><div class="wrapped-stat-value">${p2Count ? (p2Total / p2Count).toFixed(2) : "-"}</div><div class="wrapped-stat-sub">${p2Fails} fail${p2Fails === 1 ? "" : "s"}</div></div>
+      <div class="wrapped-stat"><div class="wrapped-stat-label">Ties</div><div class="wrapped-stat-value" style="color:#87888c">${ties}</div></div>
+      <div class="wrapped-stat"><div class="wrapped-stat-label">Record (P1–P2–T)</div><div class="wrapped-stat-value">${p1Score}–${p2Score}–${ties}</div></div>
+      ${highlight ? `<div class="wrapped-highlight"><div class="wrapped-highlight-emoji">${highlight.emoji}</div><div class="wrapped-highlight-text">${highlight.text}</div></div>` : ""}
+    </div>
+  `;
+}
+
+
 function buildPicker(containerId, playerKey, colorClass) {
   const container = $(containerId);
   container.innerHTML = "";
