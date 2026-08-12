@@ -95,7 +95,12 @@ input[type="text"], input[type="date"] {
   background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px;
   color: var(--text); padding: 9px 10px; font-size: 14px; outline: none; width: 100%;
 }
-input[type="date"] { color-scheme: dark; }
+input[type="date"] {
+  color-scheme: dark;
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 40px;
+}
 
 .guess-picker { display: flex; gap: 4px; flex-wrap: wrap; }
 .guess-btn {
