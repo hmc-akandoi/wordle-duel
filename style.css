@@ -86,8 +86,8 @@ body {
   text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;
 }
 
-.form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
-.form-row > div { flex: 1 1 130px; min-width: 0; }
+.form-row { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.form-row > div { width: 100%; min-width: 0; }
 .guess-row { margin-bottom: 0; gap: 16px; }
 .field-label { display: block; font-size: 11px; color: var(--text-dim); margin-bottom: 4px; font-weight: 600; }
 
@@ -101,6 +101,12 @@ input[type="date"] { color-scheme: dark; }
 .guess-btn {
   width: clamp(30px, 8.5vw, 38px); height: clamp(30px, 8.5vw, 38px); border-radius: 6px; border: 1px solid var(--border);
   background: transparent; color: var(--text-dim); font-weight: 700; font-size: 14px; cursor: pointer; flex-shrink: 0;
+}
+
+@media (min-width: 480px) {
+  .form-row { flex-direction: row; flex-wrap: wrap; }
+  .form-row > div { width: auto; flex: 1 1 150px; }
+  .guess-row > div { flex: 1 1 200px; }
 }
 .guess-btn.active-green { background: var(--green-bright); border-color: var(--green-bright); color: #fff; }
 .guess-btn.active-yellow { background: var(--yellow-bright); border-color: var(--yellow-bright); color: #fff; }
